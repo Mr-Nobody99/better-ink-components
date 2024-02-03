@@ -1,0 +1,19 @@
+{
+  "name": "ink-components",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "author": "Alexander Kutz <kutzy99@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/ink": "^2.0.3",
+    "@types/node": "^20.11.16",
+    "@types/react": "^18.2.52",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "figures": "^6.0.1",
+    "ink": "^4.4.1",
+    "react": "^18.2.0"
+  }
+}
