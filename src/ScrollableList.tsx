@@ -22,6 +22,7 @@ type Props<T> = {
   onChange?: (activeItem: T) => void;
   scrollBarStyles?: ScrollBarStyles;
   focusColor?: TextProps["color"];
+  containerStyles?: BoxProps;
   showScrollBar?: boolean;
   autoFocus?: boolean;
   downInput?: string;
@@ -37,6 +38,7 @@ const ScrollableList = <T extends string | JSX.Element>({
   onChange,
   contentStyles,
   scrollBarStyles,
+  containerStyles,
   focusColor = "green",
   showScrollBar = true,
   autoFocus = true,
@@ -153,13 +155,20 @@ const ScrollableList = <T extends string | JSX.Element>({
   }, []);
 
   const wrapperStyle: BoxProps = {
+    flexDirection: "column",
+    alignItems: "center",
+    flexGrow: 1,
+    ...props,
+  };
+
+  const containerStyle: BoxProps = {
     flexDirection: "row",
     height: "100%",
     flexShrink: 1,
 
     borderStyle: "single",
     borderDimColor: true,
-    ...props,
+    ...containerStyles,
   };
 
   const contentStyle: BoxProps = {
@@ -172,9 +181,9 @@ const ScrollableList = <T extends string | JSX.Element>({
   const isStringList = children.every((item) => typeof item === "string");
 
   return (
-    <Box flexDirection="column" alignItems="center" flexGrow={1}>
+    <Box {...wrapperStyle}>
       <Text underline>{title}</Text>
-      <Box {...wrapperStyle}>
+      <Box {...containerStyle}>
         {showScrollBar && (
           <VerticalScrollBar
             height={dimensions.height}
