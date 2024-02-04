@@ -8,6 +8,7 @@ import {
   useInput,
   Text,
   Box,
+  TextProps,
 } from "ink";
 
 import VerticalScrollBar, {
@@ -17,14 +18,16 @@ import VerticalScrollBar, {
 type Dimensions = ReturnType<typeof measureElement>;
 
 type Props<T> = {
-  children: T[];
   contentStyles?: Omit<BoxProps, "flexDirection">;
   onChange?: (activeItem: T) => void;
   scrollBarStyles?: ScrollBarStyles;
+  focusColor?: TextProps["color"];
   showScrollBar?: boolean;
   autoFocus?: boolean;
   downInput?: string;
   upInput?: string;
+  title?: string;
+  children: T[];
 } & BoxProps;
 
 const BORDER_HEIGHT = 2;
@@ -34,10 +37,12 @@ const ScrollableList = <T extends string | JSX.Element>({
   onChange,
   contentStyles,
   scrollBarStyles,
+  focusColor = "green",
   showScrollBar = true,
   autoFocus = true,
   downInput = "j",
   upInput = "k",
+  title,
   ...props
 }: Props<T>) => {
   const [overflowBottom, setOverflowBottom] = useState<T[]>([]);
@@ -148,6 +153,10 @@ const ScrollableList = <T extends string | JSX.Element>({
   }, []);
 
   const wrapperStyle: BoxProps = {
+    flexDirection: "row",
+    height: "100%",
+    flexShrink: 1,
+
     borderStyle: "single",
     borderDimColor: true,
     ...props,
@@ -163,33 +172,36 @@ const ScrollableList = <T extends string | JSX.Element>({
   const isStringList = children.every((item) => typeof item === "string");
 
   return (
-    <Box {...wrapperStyle}>
-      {showScrollBar && (
-        <VerticalScrollBar
-          height={dimensions.height}
-          scrollPosition={scrollPosition}
-        />
-      )}
-      <Box ref={ref} {...contentStyle}>
-        {visibleItems.map((item, i) =>
-          isStringList ? (
-            <Text
-              key={i}
-              color={isFocused && i === focusIndex ? "blueBright" : undefined}
-            >
-              {item}
-            </Text>
-          ) : (
-            <Box key={i} alignItems="center">
-              <Text
-                color={isFocused && i === focusIndex ? "blueBright" : undefined}
-              >
-                {figureSet.pointer + " "}
-              </Text>
-              {item}
-            </Box>
-          ),
+    <Box flexDirection="column" alignItems="center" flexGrow={1}>
+      <Text underline>{title}</Text>
+      <Box {...wrapperStyle}>
+        {showScrollBar && (
+          <VerticalScrollBar
+            height={dimensions.height}
+            scrollPosition={scrollPosition}
+          />
         )}
+        <Box ref={ref} {...contentStyle}>
+          {visibleItems.map((item, i) =>
+            isStringList ? (
+              <Text
+                key={i}
+                color={isFocused && i === focusIndex ? focusColor : undefined}
+              >
+                {item}
+              </Text>
+            ) : (
+              <Box key={i} alignItems="center">
+                <Text
+                  color={isFocused && i === focusIndex ? focusColor : undefined}
+                >
+                  {figureSet.pointer + " "}
+                </Text>
+                {item}
+              </Box>
+            ),
+          )}
+        </Box>
       </Box>
     </Box>
   );
