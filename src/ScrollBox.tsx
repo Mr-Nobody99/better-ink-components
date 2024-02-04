@@ -1,6 +1,10 @@
 import { Box, Text, useInput, measureElement, useFocusManager } from "ink";
 import { useRef, useState, useEffect } from "react";
-import figures from "figures";
+import VerticalScrollBar, { ScrollBarStyles } from "./VerticalScrollBar.js";
+
+type Props = {
+  scrollBarStyles?: ScrollBarStyles;
+};
 
 const ScrollBox = ({
   children,
@@ -16,11 +20,11 @@ const ScrollBox = ({
   const [dimensions, setDimensions] =
     useState<ReturnType<typeof measureElement>>();
 
-  const [scrollOffset, setScrollOffset] = useState(0);
+  const [scrollPosition, setScrollOffset] = useState(0);
   const moveScrollWheel = (direction: "up" | "down") => {
     if (!dimensions?.height) return;
     const step = (dimensions.height - 2) / children.length;
-    setScrollOffset(scrollOffset + (direction === "down" ? step : -step));
+    setScrollOffset(scrollPosition + (direction === "down" ? step : -step));
   };
 
   const [positiveOverflow, setPositiveOverflow] = useState<JSX.Element[]>([]);
@@ -107,22 +111,13 @@ const ScrollBox = ({
     { isActive: !!dimensions },
   );
 
-  const repeats = ~~Math.abs(scrollOffset) || 0;
-  const scrollBar =
-    (figures.lineVerticalBold + "\n").repeat(repeats) +
-    figures.square +
-    "\n" +
-    (dimensions?.height
-      ? (figures.lineVerticalBold + "\n").repeat(
-          dimensions?.height - 3 - repeats,
-        )
-      : "");
-
   return (
     <Box height="100%">
-      <Box flexDirection="column" marginTop={1}>
-        <Text color="blueBright">{scrollBar}</Text>
-      </Box>
+      <VerticalScrollBar
+        height={(dimensions?.height ?? 3) - 3}
+        scrollPosition={scrollPosition}
+        boxStyle={{ marginTop: 1 }}
+      />
       <Box ref={ref} flexDirection="column" borderStyle="round" paddingX={1}>
         {itemsToShow}
       </Box>
