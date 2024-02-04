@@ -6,15 +6,10 @@ import { clear } from "console";
 const TestApp = () => {
   const [width, height] = useDimensions();
   return (
-    <Box
-      width={width}
-      height={height - 1}
-      borderStyle="single"
-      borderColor="green"
-    >
-      <ScrollableList
-        items={new Array(100).fill("element").map((x, i) => x + i)}
-      />
+    <Box borderStyle="single" height={height - 1} width={width}>
+      <ScrollableList>
+        {new Array(100).fill("element").map((x, i) => x + i)}
+      </ScrollableList>
     </Box>
   );
 };

@@ -31,19 +31,17 @@ const VerticalScrollBar = ({
 
     background: figureSet.lineVerticalBold,
     backgroundStyles: {
-      color: "yellow",
       dimColor: true,
     },
 
     icon: figureSet.square,
     iconStyles: {
-      color: "yellowBright",
       bold: true,
     },
   },
 }: Props) => {
   const position = ~~Math.abs(scrollPosition);
-  const tail = (background + "\n").repeat(Math.abs(height - position));
+  const tail = (background + "\n").repeat(Math.abs(height - position - 3));
   const head = (background + "\n").repeat(position);
   const bar = icon.trim() + "\n";
   return (

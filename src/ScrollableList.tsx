@@ -12,30 +12,35 @@ import {
 import VerticalScrollBar, {
   type ScrollBarStyles,
 } from "./VerticalScrollBar.js";
+import figureSet from "figures";
 
 type Dimensions = ReturnType<typeof measureElement>;
 
-type Props = {
-  items: string[];
-  upInput?: string;
-  downInput?: string;
-  scrollBarStyles?: ScrollBarStyles;
+type Props<T> = {
+  children: T[];
   contentStyles?: Omit<BoxProps, "flexDirection">;
+  onChange?: (activeItem: T) => void;
+  scrollBarStyles?: ScrollBarStyles;
+  showScrollBar?: boolean;
+  downInput?: string;
+  upInput?: string;
 } & BoxProps;
 
 const BORDER_HEIGHT = 2;
 
-const ScrollableList = ({
-  items,
+const ScrollableList = <T extends string | JSX.Element>({
+  children,
+  onChange,
   contentStyles,
   scrollBarStyles,
+  showScrollBar = true,
   downInput = "j",
   upInput = "k",
   ...props
-}: Props) => {
-  const [overflowBottom, setOverflowBottom] = useState<string[]>([]);
-  const [visibleItems, setVisibleItems] = useState<string[]>([]);
-  const [overflowTop, setOverflowTop] = useState<string[]>([]);
+}: Props<T>) => {
+  const [overflowBottom, setOverflowBottom] = useState<T[]>([]);
+  const [visibleItems, setVisibleItems] = useState<T[]>([]);
+  const [overflowTop, setOverflowTop] = useState<T[]>([]);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [focusIndex, setFocusIndex] = useState(0);
 
@@ -44,15 +49,14 @@ const ScrollableList = ({
     width: 0,
   });
 
-  const scrollStep = Math.abs(dimensions.height - 2) / items.length;
+  const scrollStep = Math.abs(dimensions.height - 2) / children.length;
 
   const scrollDown = () => {
-    // move focus down
     if (focusIndex < visibleItems.length - 1) {
+      setScrollPosition(scrollPosition + scrollStep);
       setFocusIndex(focusIndex + 1);
-      return setScrollPosition(scrollPosition + scrollStep);
+      return onChange?.(visibleItems[focusIndex + 1]);
     }
-    // scroll down
     if (overflowBottom.length) {
       const _overflowBottom = overflowBottom.slice();
       const _visibleItems = visibleItems.slice();
@@ -65,38 +69,42 @@ const ScrollableList = ({
       setVisibleItems(_visibleItems);
       setOverflowTop(_overflowTop);
 
-      return setScrollPosition(scrollPosition + scrollStep);
+      setScrollPosition(scrollPosition + scrollStep);
+
+      return onChange?.(_visibleItems[focusIndex]);
     }
     // wrap around to top
-    setVisibleItems(items.slice(0, dimensions.height - BORDER_HEIGHT));
-    setOverflowBottom(items.slice(dimensions.height - BORDER_HEIGHT));
+    setVisibleItems(children.slice(0, dimensions.height - BORDER_HEIGHT));
+    setOverflowBottom(children.slice(dimensions.height - BORDER_HEIGHT));
     setOverflowTop([]);
 
+    setScrollPosition(0);
     setFocusIndex(0);
-    return setScrollPosition(0);
+
+    onChange?.(children[0]);
   };
 
   const scrollUp = () => {
-    // move focus up
     if (focusIndex > 0) {
       setFocusIndex(focusIndex - 1);
-      return setScrollPosition(scrollPosition - scrollStep);
+      setScrollPosition(scrollPosition - scrollStep);
+      return onChange?.(visibleItems[focusIndex - 1]);
     }
 
     const _overflowBottom = overflowBottom.slice();
     const _visibleItems = visibleItems.slice();
     const _overflowTop = overflowTop.slice();
 
-    // scroll up
     if (overflowTop.length) {
       _overflowBottom.unshift(_visibleItems.pop());
       _visibleItems.unshift(_overflowTop.pop());
 
+      setScrollPosition(scrollPosition - scrollStep);
       setOverflowBottom(_overflowBottom);
       setVisibleItems(_visibleItems);
       setOverflowTop(_overflowTop);
 
-      return setScrollPosition(scrollPosition - scrollStep);
+      return onChange?.(_visibleItems[focusIndex]);
     }
 
     // wrap around to bottom
@@ -104,11 +112,13 @@ const ScrollableList = ({
       _overflowTop.push(_visibleItems.shift());
       _visibleItems.push(_overflowBottom.shift());
     }
-    setFocusIndex(visibleItems.length - 1);
     setScrollPosition(dimensions.height - 3);
+    setFocusIndex(_visibleItems.length - 1);
     setOverflowBottom(_overflowBottom);
     setVisibleItems(_visibleItems);
     setOverflowTop(_overflowTop);
+
+    onChange?.(_visibleItems[_visibleItems.length - 1]);
   };
 
   const { isFocused } = useFocus({ autoFocus: true });
@@ -127,8 +137,8 @@ const ScrollableList = ({
   const ref = useRef();
   useEffect(() => {
     const _dimensions = measureElement(ref.current);
-    const _visibleItems = items.slice(0, _dimensions.height - BORDER_HEIGHT);
-    const _overflowBottom = items.slice(_dimensions.height - BORDER_HEIGHT);
+    const _visibleItems = children.slice(0, _dimensions.height - BORDER_HEIGHT);
+    const _overflowBottom = children.slice(_dimensions.height - BORDER_HEIGHT);
 
     setOverflowBottom(_overflowBottom);
     setVisibleItems(_visibleItems);
@@ -148,18 +158,31 @@ const ScrollableList = ({
     ...contentStyles,
   };
 
+  const isStringList = children.every((item) => typeof item === "string");
+
   return (
     <Box {...wrapperStyle}>
-      <VerticalScrollBar
-        height={dimensions.height - 3}
-        scrollPosition={scrollPosition}
-      />
+      {showScrollBar && (
+        <VerticalScrollBar
+          height={dimensions.height}
+          scrollPosition={scrollPosition}
+        />
+      )}
       <Box ref={ref} {...contentStyle}>
-        {visibleItems.map((item, i) => (
-          <Text key={i} color={i === focusIndex ? "blueBright" : undefined}>
-            {item}
-          </Text>
-        ))}
+        {visibleItems.map((item, i) =>
+          isStringList ? (
+            <Text key={i} color={i === focusIndex ? "blueBright" : undefined}>
+              {item}
+            </Text>
+          ) : (
+            <Box key={i} alignItems="center">
+              <Text color={i === focusIndex ? "blueBright" : undefined}>
+                {figureSet.pointer + " "}
+              </Text>
+              {item}
+            </Box>
+          ),
+        )}
       </Box>
     </Box>
   );
