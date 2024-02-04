@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "module": "NodeNext",
-    "outDir": "build",
+    "outDir": "lib",
     "jsx": "react-jsx",
   },
   "include": ["src"],
