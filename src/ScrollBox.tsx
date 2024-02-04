@@ -116,7 +116,6 @@ const ScrollBox = ({
       <VerticalScrollBar
         height={(dimensions?.height ?? 3) - 3}
         scrollPosition={scrollPosition}
-        boxStyle={{ marginTop: 1 }}
       />
       <Box ref={ref} flexDirection="column" borderStyle="round" paddingX={1}>
         {itemsToShow}

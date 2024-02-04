@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+
 import {
   type BoxProps,
   measureElement,
@@ -6,41 +8,44 @@ import {
   Text,
   Box,
 } from "ink";
-import { useEffect, useRef, useState } from "react";
-import VerticalScrollBar, { ScrollBarStyles } from "./VerticalScrollBar.js";
+
+import VerticalScrollBar, {
+  type ScrollBarStyles,
+} from "./VerticalScrollBar.js";
 
 type Dimensions = ReturnType<typeof measureElement>;
+
 type Props = {
   items: string[];
+  upInput?: string;
+  downInput?: string;
   scrollBarStyles?: ScrollBarStyles;
+  contentStyles?: Omit<BoxProps, "flexDirection">;
 } & BoxProps;
 
 const BORDER_HEIGHT = 2;
 
-const ScrollableList = ({ items, scrollBarStyles, ...props }: Props) => {
+const ScrollableList = ({
+  items,
+  contentStyles,
+  scrollBarStyles,
+  downInput = "j",
+  upInput = "k",
+  ...props
+}: Props) => {
   const [overflowBottom, setOverflowBottom] = useState<string[]>([]);
   const [visibleItems, setVisibleItems] = useState<string[]>([]);
   const [overflowTop, setOverflowTop] = useState<string[]>([]);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [focusIndex, setFocusIndex] = useState(0);
+
   const [dimensions, setDimensions] = useState<Dimensions>({
     height: 0,
     width: 0,
   });
 
-  const ref = useRef();
-
-  useEffect(() => {
-    const _dimensions = measureElement(ref.current);
-    const _visibleItems = items.slice(0, _dimensions.height - BORDER_HEIGHT);
-    const _overflowBottom = items.slice(_dimensions.height - BORDER_HEIGHT);
-
-    setOverflowBottom(_overflowBottom);
-    setVisibleItems(_visibleItems);
-    setDimensions(_dimensions);
-  }, []);
-
   const scrollStep = Math.abs(dimensions.height - 2) / items.length;
+
   const scrollDown = () => {
     // move focus down
     if (focusIndex < visibleItems.length - 1) {
@@ -53,8 +58,8 @@ const ScrollableList = ({ items, scrollBarStyles, ...props }: Props) => {
       const _visibleItems = visibleItems.slice();
       const _overflowTop = overflowTop.slice();
 
-      _overflowTop.push(_visibleItems.shift());
       _visibleItems.push(_overflowBottom.shift());
+      _overflowTop.push(_visibleItems.shift());
 
       setOverflowBottom(_overflowBottom);
       setVisibleItems(_visibleItems);
@@ -70,6 +75,7 @@ const ScrollableList = ({ items, scrollBarStyles, ...props }: Props) => {
     setFocusIndex(0);
     return setScrollPosition(0);
   };
+
   const scrollUp = () => {
     // move focus up
     if (focusIndex > 0) {
@@ -81,6 +87,7 @@ const ScrollableList = ({ items, scrollBarStyles, ...props }: Props) => {
     const _visibleItems = visibleItems.slice();
     const _overflowTop = overflowTop.slice();
 
+    // scroll up
     if (overflowTop.length) {
       _overflowBottom.unshift(_visibleItems.pop());
       _visibleItems.unshift(_overflowTop.pop());
@@ -92,6 +99,7 @@ const ScrollableList = ({ items, scrollBarStyles, ...props }: Props) => {
       return setScrollPosition(scrollPosition - scrollStep);
     }
 
+    // wrap around to bottom
     while (_overflowBottom.length) {
       _overflowTop.push(_visibleItems.shift());
       _visibleItems.push(_overflowBottom.shift());
@@ -105,33 +113,48 @@ const ScrollableList = ({ items, scrollBarStyles, ...props }: Props) => {
 
   const { isFocused } = useFocus({ autoFocus: true });
   useInput(
-    (input, key) => {
-      if (input === "j") {
+    (input, _) => {
+      if (input === downInput) {
         scrollDown();
       }
-      if (input === "k") {
+      if (input === upInput) {
         scrollUp();
       }
     },
     { isActive: isFocused },
   );
 
+  const ref = useRef();
+  useEffect(() => {
+    const _dimensions = measureElement(ref.current);
+    const _visibleItems = items.slice(0, _dimensions.height - BORDER_HEIGHT);
+    const _overflowBottom = items.slice(_dimensions.height - BORDER_HEIGHT);
+
+    setOverflowBottom(_overflowBottom);
+    setVisibleItems(_visibleItems);
+    setDimensions(_dimensions);
+  }, []);
+
+  const wrapperStyle: BoxProps = {
+    borderStyle: "single",
+    borderDimColor: true,
+    ...props,
+  };
+
+  const contentStyle: BoxProps = {
+    justifyContent: "center",
+    flexDirection: "column",
+    paddingX: 2,
+    ...contentStyles,
+  };
+
   return (
-    <Box {...{ borderStyle: "single", ...props }}>
+    <Box {...wrapperStyle}>
       <VerticalScrollBar
         height={dimensions.height - 3}
         scrollPosition={scrollPosition}
-        textStyle={scrollBarStyles?.textStyle}
-        boxStyle={{
-          borderStyle: "single",
-          borderBottom: false,
-          borderLeft: false,
-          borderTop: false,
-          paddingTop: 1,
-          ...scrollBarStyles?.boxStyle,
-        }}
       />
-      <Box ref={ref} paddingX={1} marginTop={1} flexDirection="column">
+      <Box ref={ref} {...contentStyle}>
         {visibleItems.map((item, i) => (
           <Text key={i} color={i === focusIndex ? "blueBright" : undefined}>
             {item}

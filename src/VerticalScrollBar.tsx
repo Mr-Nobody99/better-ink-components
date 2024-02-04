@@ -1,32 +1,57 @@
 import { Box, Text, type BoxProps, type TextProps } from "ink";
-import figures from "figures";
+import figureSet from "figures";
 
 export type ScrollBarStyles = {
-  textStyle?: TextProps & { background: string; icon: string };
-  boxStyle?: Omit<BoxProps, "flexDirection">;
+  icon?: string;
+  background?: string;
+  iconStyles?: TextProps;
+  backgroundStyles?: TextProps;
+  borderStyles?: Omit<BoxProps, "flexDirection">;
 };
 
 type Props = {
-  scrollPosition: number;
   height: number;
-} & ScrollBarStyles;
+  scrollPosition: number;
+  styles?: ScrollBarStyles;
+};
 
 const VerticalScrollBar = ({
-  scrollPosition,
-  textStyle,
-  boxStyle,
   height,
+  scrollPosition,
+  styles: { icon, iconStyles, background, backgroundStyles, borderStyles } = {
+    borderStyles: {
+      borderRightDimColor: true,
+      borderStyle: "single",
+      borderBottom: false,
+      borderLeft: false,
+      borderTop: false,
+      height: "100%",
+      paddingTop: 1,
+    },
+
+    background: figureSet.lineVerticalBold,
+    backgroundStyles: {
+      color: "yellow",
+      dimColor: true,
+    },
+
+    icon: figureSet.square,
+    iconStyles: {
+      color: "yellowBright",
+      bold: true,
+    },
+  },
 }: Props) => {
   const position = ~~Math.abs(scrollPosition);
-  const head = (figures.lineVerticalBold + "\n").repeat(position);
-  const body = figures.square + "\n";
-  const tail = (figures.lineVerticalBold + "\n").repeat(
-    Math.abs(height - position),
-  );
+  const tail = (background + "\n").repeat(Math.abs(height - position));
+  const head = (background + "\n").repeat(position);
+  const bar = icon.trim() + "\n";
   return (
-    <Box {...{ ...boxStyle, flexDirection: "column" }}>
-      <Text {...{ color: "blueBright", ...textStyle }}>
-        {head + body + tail}
+    <Box flexDirection="column" {...borderStyles}>
+      <Text wrap="truncate">
+        <Text {...backgroundStyles}>{head}</Text>
+        <Text {...iconStyles}>{bar}</Text>
+        <Text {...backgroundStyles}>{tail}</Text>
       </Text>
     </Box>
   );
