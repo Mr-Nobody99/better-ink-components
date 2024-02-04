@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import figureSet from "figures";
 
 import {
   type BoxProps,
@@ -12,7 +13,6 @@ import {
 import VerticalScrollBar, {
   type ScrollBarStyles,
 } from "./VerticalScrollBar.js";
-import figureSet from "figures";
 
 type Dimensions = ReturnType<typeof measureElement>;
 
@@ -22,6 +22,7 @@ type Props<T> = {
   onChange?: (activeItem: T) => void;
   scrollBarStyles?: ScrollBarStyles;
   showScrollBar?: boolean;
+  autoFocus?: boolean;
   downInput?: string;
   upInput?: string;
 } & BoxProps;
@@ -34,6 +35,7 @@ const ScrollableList = <T extends string | JSX.Element>({
   contentStyles,
   scrollBarStyles,
   showScrollBar = true,
+  autoFocus = true,
   downInput = "j",
   upInput = "k",
   ...props
@@ -121,7 +123,7 @@ const ScrollableList = <T extends string | JSX.Element>({
     onChange?.(_visibleItems[_visibleItems.length - 1]);
   };
 
-  const { isFocused } = useFocus({ autoFocus: true });
+  const { isFocused } = useFocus({ autoFocus });
   useInput(
     (input, _) => {
       if (input === downInput) {
@@ -171,12 +173,17 @@ const ScrollableList = <T extends string | JSX.Element>({
       <Box ref={ref} {...contentStyle}>
         {visibleItems.map((item, i) =>
           isStringList ? (
-            <Text key={i} color={i === focusIndex ? "blueBright" : undefined}>
+            <Text
+              key={i}
+              color={isFocused && i === focusIndex ? "blueBright" : undefined}
+            >
               {item}
             </Text>
           ) : (
             <Box key={i} alignItems="center">
-              <Text color={i === focusIndex ? "blueBright" : undefined}>
+              <Text
+                color={isFocused && i === focusIndex ? "blueBright" : undefined}
+              >
                 {figureSet.pointer + " "}
               </Text>
               {item}

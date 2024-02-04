@@ -4,7 +4,7 @@
   "main": "index.js",
   "type": "module",
   "author": "Alexander Kutz <kutzy99@gmail.com>",
-  "license": "MIT",
+  "license": "Unlicense",
   "devDependencies": {
     "@types/ink": "^2.0.3",
     "@types/node": "^20.11.16",
