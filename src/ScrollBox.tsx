@@ -1,40 +1,6 @@
-import {
-  useRef,
-  useState,
-  useEffect,
-  useLayoutEffect,
-  type PropsWithChildren,
-} from "react";
-
-import {
-  Box,
-  Text,
-  render,
-  measureElement,
-  useInput,
-  useFocus,
-  useStdout,
-  useFocusManager,
-} from "ink";
-import { clear } from "console";
-
-import useDimensions from "./hooks/useDimensions.js";
+import { Box, Text, useInput, measureElement, useFocusManager } from "ink";
+import { useRef, useState, useEffect } from "react";
 import figures from "figures";
-
-const FocusableText = ({
-  id,
-  children,
-  setFocusIndex,
-}: PropsWithChildren<{
-  id: number;
-  setFocusIndex?: (index: number) => void;
-}>) => {
-  const { isFocused } = useFocus({ id: id + "" });
-  useEffect(() => {
-    isFocused && setFocusIndex(id);
-  }, [isFocused]);
-  return <Text color={isFocused ? "blue" : "white"}>{children}</Text>;
-};
 
 const ScrollBox = ({
   children,
@@ -50,8 +16,12 @@ const ScrollBox = ({
   const [dimensions, setDimensions] =
     useState<ReturnType<typeof measureElement>>();
 
-  const [scrollDirection, setScrollDirection] = useState<"up" | "down">("down");
-  const [scrollCount, setScrollCount] = useState(0);
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const moveScrollWheel = (direction: "up" | "down") => {
+    if (!dimensions?.height) return;
+    const step = (dimensions.height - 2) / children.length;
+    setScrollOffset(scrollOffset + (direction === "down" ? step : -step));
+  };
 
   const [positiveOverflow, setPositiveOverflow] = useState<JSX.Element[]>([]);
   const [negativeOverflow, setNegativeOverflow] = useState<JSX.Element[]>([]);
@@ -64,8 +34,10 @@ const ScrollBox = ({
     setPositiveOverflow(children.slice(dimensions.height - 2));
     setDimensions(dimensions);
     disableFocus();
+    return enableFocus;
   }, []);
 
+  const [scrollDirection, setScrollDirection] = useState<"up" | "down">("down");
   useEffect(() => {
     if (focusIndex === undefined) {
       return scrollDirection === "down"
@@ -76,16 +48,19 @@ const ScrollBox = ({
   }, [itemsToShow]);
 
   useInput(
-    (input, key) => {
+    (input) => {
       if (input === "j") {
         scrollDirection !== "down" && setScrollDirection("down");
         if (focusIndex < itemsToShow.length - 1) {
+          moveScrollWheel("down");
           return focus(`${focusIndex + 1}`);
         }
         if (focusIndex >= children.length - 1) {
           setItemsToShow(children.slice(0, dimensions.height - 2));
           setPositiveOverflow(children.slice(dimensions.height - 2));
           setNegativeOverflow([]);
+          setScrollOffset(0);
+
           return setFocusIndex(undefined);
         }
         if (positiveOverflow.length) {
@@ -99,8 +74,8 @@ const ScrollBox = ({
           setNegativeOverflow(newNegativeOverflow);
           setPositiveOverflow(newPositiveOverflow);
           setItemsToShow(newItems);
+          return moveScrollWheel("down");
         }
-        return;
       }
       if (input === "k") {
         scrollDirection !== "up" && setScrollDirection("up");
@@ -115,6 +90,7 @@ const ScrollBox = ({
           setNegativeOverflow(newNegativeOverflow);
           setPositiveOverflow(newPositiveOverflow);
           setItemsToShow(newItems);
+          dimensions?.height && setScrollOffset(dimensions.height - 3);
           return setFocusIndex(undefined);
         }
         if (negativeOverflow.length) {
@@ -123,49 +99,35 @@ const ScrollBox = ({
           setNegativeOverflow(newNegativeOverflow);
           setPositiveOverflow(newPositiveOverflow);
           setItemsToShow(newItems);
-          return;
         }
+        moveScrollWheel("up");
         return focus(`${focusIndex - 1}`);
       }
     },
     { isActive: !!dimensions },
   );
 
+  const repeats = ~~Math.abs(scrollOffset) || 0;
+  const scrollBar =
+    (figures.lineVerticalBold + "\n").repeat(repeats) +
+    figures.square +
+    "\n" +
+    (dimensions?.height
+      ? (figures.lineVerticalBold + "\n").repeat(
+          dimensions?.height - 3 - repeats,
+        )
+      : "");
+
   return (
-    <Box height="100%" borderStyle="single">
-      <Box flexDirection="column" borderStyle="single">
-        <Text>
-          {"\n".repeat(!scrollCount ? scrollCount : scrollCount - 1) +
-            figures.square}
-        </Text>
+    <Box height="100%">
+      <Box flexDirection="column" marginTop={1}>
+        <Text color="blueBright">{scrollBar}</Text>
       </Box>
-      <Box ref={ref} flexDirection="column" borderStyle="single">
+      <Box ref={ref} flexDirection="column" borderStyle="round" paddingX={1}>
         {itemsToShow}
       </Box>
     </Box>
   );
 };
 
-const App = () => {
-  const [width, height] = useDimensions();
-  const [focusIndex, setFocusIndex] = useState<number>();
-  return (
-    <Box
-      width={width}
-      height={height - 10}
-      borderStyle="single"
-      borderColor="green"
-    >
-      <ScrollBox focusIndex={focusIndex} setFocusIndex={setFocusIndex}>
-        {new Array(50).fill("element").map((str, i) => (
-          <FocusableText id={i} key={i} setFocusIndex={setFocusIndex}>
-            {str + i}
-          </FocusableText>
-        ))}
-      </ScrollBox>
-    </Box>
-  );
-};
-
-clear();
-render(<App />);
+export default ScrollBox;
